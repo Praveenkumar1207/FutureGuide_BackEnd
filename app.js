@@ -1,33 +1,36 @@
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+require('dotenv').config();
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+const app = express();
+const LoginPagerouter = require('./routes/userauthenticationRoutes');
 
-var app = express();
-
-// Middleware
-app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
-
-// API Routes
-app.use('/api', indexRouter);
-app.use('/api/users', usersRouter);
-
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+// MongoDB connection
+mongoose.connect(process.env.MONGO_URI)
+.then(() => console.log('MongoDB connected successfully'))
+.catch((error) => {
+  console.error('MongoDB connection error:', error);
+  process.exit(1);
 });
 
-// Error handler
-app.use(function(err, req, res, next) {
-  res.status(err.status || 500);
-  res.json({ error: err.message });
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Routes
+
+// Health check route
+app.use('/api/', LoginPagerouter);
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: 'Something went wrong!' });
+});
+
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({ message: 'Route not found' });
 });
 
 module.exports = app;
