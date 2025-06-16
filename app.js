@@ -5,6 +5,7 @@ const cors = require('cors');
 
 const app = express();
 const LoginPagerouter = require('./routes/userauthenticationRoutes');
+const userProfileRoutes = require('./routes/userProfileRoutes');
 
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI)
@@ -19,9 +20,9 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-
-// Health check route
 app.use('/api/', LoginPagerouter);
+app.use('/ProfileApi/', userProfileRoutes);
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);

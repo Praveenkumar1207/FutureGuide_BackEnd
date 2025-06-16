@@ -104,7 +104,7 @@ const signup = async (req, res) => {
         res.json({ message: 'OTP sent to email' });
     } catch (error) {
         console.error('Signup error:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        return res.status(500).json({ message: 'Internal server error' });
     }
 };
 
@@ -133,7 +133,7 @@ const login = async (req, res) => {
         res.json({ message: 'Login successful' });
     } catch (error) {
         console.error('Login error:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        return res.status(500).json({ message: 'Internal server error' });
     }
 };
 
@@ -154,7 +154,7 @@ const verifyOTP = async (req, res) => {
         }
 
         // Create user in DB
-        await User.create({
+        const createdUser = await User.create({
             email: pending.email,
             password: pending.password
         });
@@ -162,7 +162,8 @@ const verifyOTP = async (req, res) => {
         // Remove pending signup
         delete pendingSignups[email];
 
-        res.json({ message: 'OTP verified successfully, user created' });
+        res.json({ message: 'OTP verified successfully, user created', user: {_id: createdUser._id} // This is the MongoDB ObjectId
+    },);
     } catch (error) {
         console.error('OTP verification error:', error);
         res.status(500).json({ message: 'Internal server error' });
