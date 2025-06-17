@@ -8,6 +8,16 @@ function extractFileUrls(files, fieldName) {
     return undefined;
 }
 
+// Validate required fields for profile creation
+function validateProfileData(data) {
+    const requiredFields = [
+        "firstName", "lastName", "gender", "college", "branch",
+        "year", "course", "specialization", "mobile", "Profile_image_path"
+    ];
+    const missing = requiredFields.filter(f => !data[f] || data[f].length === 0);
+    return missing;
+}
+
 // Create a new user profile
 exports.createProfile = async (req, res) => {
     try {
@@ -34,6 +44,25 @@ exports.createProfile = async (req, res) => {
         // If skill is sent as a string (e.g., from form), convert to array
         if (typeof profileData.skill === "string") {
             profileData.skill = profileData.skill.split(',').map(s => s.trim());
+        }
+
+        // Validate required fields
+        const missingFields = validateProfileData(profileData);
+        if (missingFields.length > 0) {
+            return res.status(400).json({ error: `Missing required fields: ${missingFields.join(', ')}` });
+        }
+
+        // Check for duplicate mobile
+        const existingMobile = await UserProfile.findOne({ mobile: profileData.mobile });
+        if (existingMobile) {
+            return res.status(400).json({ error: 'Profile with this mobile already exists' });
+        }
+        // Check for duplicate login_id if provided
+        if (profileData.login_id) {
+            const existingLoginId = await UserProfile.findOne({ login_id: profileData.login_id });
+            if (existingLoginId) {
+                return res.status(400).json({ error: 'Profile with this login_id already exists' });
+            }
         }
 
         const profile = new UserProfile(profileData);
