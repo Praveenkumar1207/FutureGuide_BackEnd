@@ -66,7 +66,7 @@ const signup = async (req, res) => {
 
         // Validate input
         if (!email || !password) {
-            return res.status(400).json({ message: 'Email and password are required' });
+            return res.status(400).json({ message: 'Email and password are required for signup' });
         }
 
         if (password.length < 6) {
