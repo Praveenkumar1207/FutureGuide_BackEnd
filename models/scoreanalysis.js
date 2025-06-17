@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const scoreAnalysisSchema = new mongoose.Schema({
-    userid :{
+    profileId :{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Profile',
         required: true
