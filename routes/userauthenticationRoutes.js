@@ -1,12 +1,17 @@
 const express = require('express');
-const LoginPagerouter = express.Router();
-const authController = require('../controllers/userAuthentication');
+const router = express.Router();  // Changed from LoginPagerouter to router for consistency
+const authController = require('../controllers/userauthentication');
 
 // Auth routes
-LoginPagerouter.post('/signup', authController.signup);
-LoginPagerouter.post('/login', authController.login);
-LoginPagerouter.post('/verify-otp', authController.verifyOTP);
-LoginPagerouter.post('/forgot-password', authController.forgotPassword);
-LoginPagerouter.post('/reset-password', authController.resetPassword);
+router.post('/signup', authController.signup);
+router.post('/login', authController.login);
+router.post('/verify-otp', authController.verifyOTP);
+router.post('/forgot-password', authController.forgotPassword);
+router.post('/reset-password', authController.resetPassword);
 
-module.exports = LoginPagerouter;
+// Add a test route to verify router is working
+router.get('/test', (req, res) => {
+  res.json({ message: 'Auth routes are working' });
+});
+
+module.exports = router;  // Export router instead of LoginPagerouter
