@@ -7,7 +7,7 @@ const app = express();
 const LoginPagerouter = require('./routes/userauthenticationRoutes');
 const userProfileRoutes = require('./routes/userProfileRoutes');
 const roadmapRoutes = require('./routes/roadmapRoutes');
-
+const scoreanalysisRoutes = require('./routes/jdanalysisroute');
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI)
 .then(() => console.log('MongoDB connected successfully'))
@@ -21,9 +21,10 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-app.use('/api/', LoginPagerouter);
-app.use('/ProfileApi/', userProfileRoutes);
+app.use('/api/auth', LoginPagerouter);
+app.use('/api/profile', userProfileRoutes);
 app.use('/api/roadmap', roadmapRoutes);
+app.use('/api/score-analysis', scoreanalysisRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
