@@ -60,10 +60,12 @@ Return ONLY the JSON — no explanation, no code block formatting.
 
 const createRoadmap = async (req, res) => {
     try {
-        const { title } = req.body;
+        const { title, profileId } = req.body;
         if (!title) return res.status(400).json({ message: 'Title is required' });
+        if (!profileId) return res.status(400).json({ message: 'Profile ID is required' });
 
         const roadmapObj = await generateRoadmapWithGemini(title);
+        roadmapObj.profileId = profileId; // Add profileId to the roadmap object
 
         const roadmap = new Roadmap(roadmapObj);
         await roadmap.save();
@@ -84,7 +86,96 @@ const getAllRoadmaps = async (req, res) => {
     }
 };
 
+// Get roadmaps by profile ID
+const getRoadmapsByProfileId = async (req, res) => {
+    try {
+        const { profileId } = req.params;
+        if (!profileId) return res.status(400).json({ message: 'Profile ID is required' });
+        
+        const roadmaps = await Roadmap.find({ profileId }).sort({ createdAt: -1 });
+        res.json(roadmaps);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Get a specific roadmap by ID
+const getRoadmapById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const roadmap = await Roadmap.findById(id);
+        
+        if (!roadmap) {
+            return res.status(404).json({ message: 'Roadmap not found' });
+        }
+        
+        res.json(roadmap);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Delete a roadmap
+const deleteRoadmap = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const roadmap = await Roadmap.findByIdAndDelete(id);
+        
+        if (!roadmap) {
+            return res.status(404).json({ message: 'Roadmap not found' });
+        }
+        
+        res.json({ message: 'Roadmap deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Update a roadmap
+const updateRoadmap = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+        
+        const roadmap = await Roadmap.findByIdAndUpdate(
+            id, 
+            updates,
+            { new: true }
+        );
+        
+        if (!roadmap) {
+            return res.status(404).json({ message: 'Roadmap not found' });
+        }
+        
+        res.json(roadmap);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Delete all roadmaps for a profile
+const deleteAllProfileRoadmaps = async (req, res) => {
+    try {
+        const { profileId } = req.params;
+        if (!profileId) return res.status(400).json({ message: 'Profile ID is required' });
+        
+        const result = await Roadmap.deleteMany({ profileId });
+        
+        res.json({ 
+            message: 'Roadmaps deleted successfully', 
+            count: result.deletedCount 
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 module.exports = {
     createRoadmap,
-    getAllRoadmaps
+    getAllRoadmaps,
+    getRoadmapsByProfileId,
+    getRoadmapById,
+    updateRoadmap,
+    deleteRoadmap,
+    deleteAllProfileRoadmaps
 };
