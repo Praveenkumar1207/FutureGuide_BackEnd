@@ -162,8 +162,7 @@ const verifyOTP = async (req, res) => {
         // Remove pending signup
         delete pendingSignups[email];
 
-        res.json({ message: 'OTP verified successfully, user created', user: {_id: createdUser._id} // This is the MongoDB ObjectId
-    },);
+        res.json({ message: 'OTP verified successfully, user created', user: {_id: createdUser._id}});
     } catch (error) {
         console.error('OTP verification error:', error);
         res.status(500).json({ message: 'Internal server error' });
@@ -249,3 +248,4 @@ module.exports = {
     forgotPassword,
     resetPassword
 };
+

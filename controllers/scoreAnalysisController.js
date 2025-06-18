@@ -9,14 +9,22 @@ const { cloudinary } = require('../config/cloudinaryConfig');
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const isworking = async(req, res) => {
-    res.status(200).json({
-        success: true,
-        message: 'API is working correctly',
-        data: {
-            status: 'OK',
-            timestamp: new Date().toISOString()
-        }
-    });
+    try {
+        res.status(200).json({
+            success: true,
+            message: 'API is working correctly',
+            data: {
+                status: 'OK',
+                timestamp: new Date().toISOString()
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
+    }
 }
 
 // Step 1: Upload JD and check user profile status
@@ -453,18 +461,6 @@ const scoreanalysis = async (req, res) => {
     }
 };
 
-// Helper function to extract public_id from Cloudinary URL
-function extractPublicIdFromUrl(cloudinaryUrl) {
-    try {
-        const matches = cloudinaryUrl.match(/\/FutureGuide_Uploads\/([^\/]+)\./);
-        return matches ? `FutureGuide_Uploads/${matches[1]}` : null;
-    } catch (error) {
-        console.error('Error extracting public_id:', error);
-        return null;
-    }
-}
-
-// Keep existing Gemini functions with small modification
 const callGemini = async (jdText, resumeText, linkedinText, documentSource = '') => {
     try {
         if (!jdText || jdText.trim().length === 0) {
@@ -651,7 +647,6 @@ function enhanceResponse(parsedResponse, resumeText, linkedinText, documentSourc
     };
 }
 
-// Keep existing helper functions
 const getScoreHistory = async (req, res) => {
     try {
         const { profileId } = req.params;
@@ -729,6 +724,17 @@ const getProfileDocumentStatus = async (req, res) => {
         });
     }
 };
+
+// Helper function to extract public_id from Cloudinary URL
+function extractPublicIdFromUrl(cloudinaryUrl) {
+    try {
+        const matches = cloudinaryUrl.match(/\/FutureGuide_Uploads\/([^\/]+)\./);
+        return matches ? `FutureGuide_Uploads/${matches[1]}` : null;
+    } catch (error) {
+        console.error('Error extracting public_id:', error);
+        return null;
+    }
+}
 
 module.exports = {
     isworking,

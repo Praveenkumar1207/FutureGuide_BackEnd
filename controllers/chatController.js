@@ -10,7 +10,7 @@ async function generateGeminiResponse(prompt) {
 }
 
 // ✅ 1. Create new chat (chat name + answer from Gemini)
-exports.createSmartChat = async (req, res) => {
+const createSmartChat = async (req, res) => {
   try {
     const { profileId, question } = req.body;
 
@@ -40,7 +40,7 @@ exports.createSmartChat = async (req, res) => {
 };
 
 // ✅ 2. Add new message to existing chat
-exports.sendMessageToChat = async (req, res) => {
+const sendMessageToChat = async (req, res) => {
   try {
     const { chatId, question } = req.body;
 
@@ -59,7 +59,7 @@ exports.sendMessageToChat = async (req, res) => {
 };
 
 // ✅ 4. Get chat by ID
-exports.getChatById = async (req, res) => {
+const getChatById = async (req, res) => {
     try {
         const { chatId } = req.params;
         const chat = await Chat.findById(chatId);
@@ -71,7 +71,7 @@ exports.getChatById = async (req, res) => {
 };
 
 // ✅ 3. Get all chats
-exports.getAllChats = async (req, res) => {
+const getAllChats = async (req, res) => {
   try {
     const chats = await Chat.find();
     res.status(200).json(chats);
@@ -81,7 +81,7 @@ exports.getAllChats = async (req, res) => {
 };
 
 // ✅ 5. Manually update chat name
-exports.updateChatName = async (req, res) => {
+const updateChatName = async (req, res) => {
   try {
     const { chatId } = req.params;
     const { newName } = req.body;
@@ -98,7 +98,7 @@ exports.updateChatName = async (req, res) => {
   }
 };
 
-exports.getchatByProfileId = async (req, res) => {
+const getchatByProfileId = async (req, res) => {
     try {
         const { profileId } = req.params;
 
@@ -125,7 +125,7 @@ exports.getchatByProfileId = async (req, res) => {
 };
 
 // ✅ 6. Delete chat
-exports.deleteChat = async (req, res) => {
+const deleteChat = async (req, res) => {
   try {
     const { chatId } = req.params;
     await Chat.findByIdAndDelete(chatId);
@@ -136,7 +136,7 @@ exports.deleteChat = async (req, res) => {
 };
 
 // ✅ 7. Delete all chats
-exports.deleteAllChats = async (req, res) => {
+const deleteAllChats = async (req, res) => {
   try {
     await Chat.deleteMany();
     res.status(200).json({ message: "All chats deleted" });
@@ -146,7 +146,7 @@ exports.deleteAllChats = async (req, res) => {
 };
 
 // ✅ 8. Get chat stats
-exports.getChatStats = async (req, res) => {
+const getChatStats = async (req, res) => {
   try {
     const totalChats = await Chat.countDocuments();
     const totalMessages = (await Chat.find()).reduce((sum, c) => sum + c.messages.length, 0);
@@ -154,4 +154,16 @@ exports.getChatStats = async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+};
+
+module.exports = {
+  createSmartChat,
+  sendMessageToChat,
+  getChatById,
+  getAllChats,
+  updateChatName,
+  getchatByProfileId,
+  deleteChat,
+  deleteAllChats,
+  getChatStats
 };

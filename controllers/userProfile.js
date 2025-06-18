@@ -19,7 +19,7 @@ function validateProfileData(data) {
 }
 
 // Create a new user profile
-exports.createProfile = async (req, res) => {
+const createProfile = async (req, res) => {
     try {
         // Extract file URLs from req.files
         const profileImageUrl = extractFileUrls(req.files, "Profile_image_path");
@@ -74,7 +74,7 @@ exports.createProfile = async (req, res) => {
 };
 
 // Get all profiles
-exports.getAllProfiles = async (req, res) => {
+const getAllProfiles = async (req, res) => {
     try {
         const profiles = await UserProfile.find();
         res.json(profiles);
@@ -84,7 +84,7 @@ exports.getAllProfiles = async (req, res) => {
 };
 
 // Get profile by login_id
-exports.getProfileByLoginId = async (req, res) => {
+const getProfileByLoginId = async (req, res) => {
     try {
         const profile = await UserProfile.findOne({ login_id: req.params.login_id });
         if (!profile) return res.status(404).json({ message: "Profile not found" });
@@ -95,7 +95,7 @@ exports.getProfileByLoginId = async (req, res) => {
 };
 
 // Update profile by login_id
-exports.updateProfile = async (req, res) => {
+const updateProfile = async (req, res) => {
     try {
         // If files are uploaded, extract their URLs
         let updateData = { ...req.body };
@@ -129,7 +129,7 @@ exports.updateProfile = async (req, res) => {
 };
 
 // Delete profile by login_id
-exports.deleteProfile = async (req, res) => {
+const deleteProfile = async (req, res) => {
     try {
         const deleted = await UserProfile.findOneAndDelete({ login_id: req.params.login_id });
         if (!deleted) return res.status(404).json({ message: "Profile not found" });
@@ -139,24 +139,10 @@ exports.deleteProfile = async (req, res) => {
     }
 };
 
-// Dummy user profile object for testing (use as JSON body or form fields):
-/*
-{
-  "firstName": "John",
-  "lastName": "Doe",
-  "nickname": "Johnny",
-  "gender": "Male",
-  "college": "Test University",
-  "branch": "Computer Science",
-  "year": "3",
-  "course": "B.Tech",
-  "specialization": "AI",
-  "mobile": "1234567890",
-  "primary_goal": "Get a job",
-  "secondary_goal": "Learn AI",
-  "skill": ["JavaScript", "Node.js", "React"],
-  "linkedin_url": "https://linkedin.com/in/johndoe",
-  "login_id": "test_login_123"
-  // For file fields (Profile_image_path, Resume_path, etc.), upload files using multipart/form-data
-}
-*/
+module.exports = {
+    createProfile,
+    getAllProfiles,
+    getProfileByLoginId,
+    updateProfile,
+    deleteProfile
+};
