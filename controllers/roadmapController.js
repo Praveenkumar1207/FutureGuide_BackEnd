@@ -1,25 +1,42 @@
 const Roadmap = require('../models/roadmap');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-// Load Gemini API key
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Helper: Map tech title keywords to vector icon names
 function getVectorIconForTitle(title) {
     const lower = title.toLowerCase();
-    if (lower.includes('react native')) return { icon: 'logo-react', iconSet: 'Ionicons' };
-    if (lower.includes('react')) return { icon: 'logo-react', iconSet: 'Ionicons' };
-    if (lower.includes('node')) return { icon: 'nodejs', iconSet: 'FontAwesome' };
-    if (lower.includes('javascript')) return { icon: 'logo-javascript', iconSet: 'Ionicons' };
-    if (lower.includes('python')) return { icon: 'language-python', iconSet: 'MaterialCommunityIcons' };
-    if (lower.includes('java')) return { icon: 'language-java', iconSet: 'MaterialCommunityIcons' };
-    if (lower.includes('android')) return { icon: 'android', iconSet: 'FontAwesome' };
-    if (lower.includes('ios')) return { icon: 'logo-apple', iconSet: 'Ionicons' };
-    if (lower.includes('mongodb')) return { icon: 'leaf', iconSet: 'FontAwesome' };
-    if (lower.includes('data science')) return { icon: 'chart-line', iconSet: 'FontAwesome5' };
-    if (lower.includes('full stack')) return { icon: 'layers', iconSet: 'Feather' };
-    return { icon: 'school', iconSet: 'MaterialIcons' }; // fallback
+    if (lower.includes('react native')) return 'react';
+    if (lower.includes('react')) return 'react';
+    if (lower.includes('node')) return 'nodejs';
+    if (lower.includes('javascript')) return 'javascript';
+    if (lower.includes('python')) return 'python';
+    if (lower.includes('java')) return 'java';
+    if (lower.includes('android')) return 'android';
+    if (lower.includes('ios')) return 'apple';
+    if (lower.includes('mongodb')) return 'mongodb';
+    if (lower.includes('data science')) return 'chart-line';
+    if (lower.includes('full stack')) return 'layers';
+    return 'school'; // fallback
 }
+
+// Static milestones template
+const defaultMilestones = [
+    { id: 1, date: 'Day 1 - Day 10', title: 'HTML, CSS & Responsive Design', completed: false },
+    { id: 2, date: 'Day 11 - Day 20', title: 'JavaScript Fundamentals (ES6+)', completed: false },
+    { id: 3, date: 'Day 21 - Day 30', title: 'Advanced JS + DOM Manipulation', completed: false },
+    { id: 4, date: 'Day 31 - Day 45', title: 'React.js Basics: Components, Props, Hooks', completed: false },
+    { id: 5, date: 'Day 46 - Day 55', title: 'React Routing & State Management', completed: false },
+    { id: 6, date: 'Day 56 - Day 70', title: 'React Native: Setup & Core Components', completed: false },
+    { id: 7, date: 'Day 71 - Day 80', title: 'React Native UI & Navigation', completed: false },
+    { id: 8, date: 'Day 81 - Day 95', title: 'Node.js & Express.js Fundamentals', completed: false },
+    { id: 9, date: 'Day 96 - Day 105', title: 'MongoDB, Mongoose & REST APIs', completed: false },
+    { id: 10, date: 'Day 106 - Day 115', title: 'Authentication & Authorization (JWT)', completed: false },
+    { id: 11, date: 'Day 116 - Day 135', title: 'Full Stack Integration (FE & BE)', completed: false },
+    { id: 12, date: 'Day 136 - Day 160', title: 'Capstone Project: Full Stack React Native App', completed: false },
+    { id: 13, date: 'Day 161 - Day 180', title: 'Resume, GitHub, Portfolio & Deployment', completed: false },
+    { id: 14, date: 'YouNailedIt', title: 'Congrats!', completed: false }
+];
 
 async function generateRoadmapWithGemini(title) {
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-preview-05-20' });
@@ -58,21 +75,99 @@ Return ONLY the JSON — no explanation, no code block formatting.
     }
 }
 
+// POST /api/roadmap/generate
 const createRoadmap = async (req, res) => {
     try {
-        const { title, profileId } = req.body;
-        if (!title) return res.status(400).json({ message: 'Title is required' });
-        if (!profileId) return res.status(400).json({ message: 'Profile ID is required' });
+        const {
+            title,
+            careerInterest,
+            primaryGoal,
+            secondaryGoal,
+            duration,
+            profileId,
+            login_id // <-- accept login_id from frontend
+        } = req.body;
 
-        const roadmapObj = await generateRoadmapWithGemini(title);
-        roadmapObj.profileId = profileId; // Add profileId to the roadmap object
+        if (!title) {
+            return res.status(400).json({ message: 'title is required' });
+        }
+        if (!duration || isNaN(duration) || duration <= 0) {
+            return res.status(400).json({ message: 'duration (in days) is required and must be a positive number' });
+        }
 
-        const roadmap = new Roadmap(roadmapObj);
-        await roadmap.save();
+        // Build a detailed prompt for Gemini
+        const prompt = `
+Given the following roadmap creation details:
+- Title: "${title}"
+- Career Interest: "${careerInterest || ''}"
+- Primary Goal: "${primaryGoal || ''}"
+- Secondary Goal: "${secondaryGoal || ''}"
+- Duration: "${duration}" days
 
-        res.status(201).json(roadmap);
+Generate a technology learning roadmap as a JavaScript object in this exact format:
+{
+  name: <string>, // Use the title as the name
+  icon: <string>, // Suggest a relevant icon name (e.g. 'react', 'nodejs', etc.)
+  initialMilestones: [
+    { id: 1, date: 'Day X - Day Y', title: '<milestone 1>', completed: false },
+    ...
+    { id: N, date: 'YouNailedIt', title: 'Congrats!', completed: false }
+  ]
+}
+- Divide the total duration (${duration} days) evenly among the milestones (about 10-14 milestones).
+- The milestones should be tailored to the title and career interest.
+- Only return the JavaScript object, no explanation, no code block formatting.
+`;
+
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-preview-05-20' });
+        const result = await model.generateContent(prompt);
+        const response = result.response.text().trim();
+
+        // Parse Gemini's response (remove code block markers if present)
+        let roadmapObj;
+        try {
+            let clean = response.replace(/```(javascript)?/g, '').trim();
+            // Try to find the JS object in the response
+            const match = clean.match(/\{[\s\S]*\}/);
+            if (match) clean = match[0];
+            roadmapObj = eval('(' + clean + ')');
+        } catch (err) {
+            return res.status(500).json({ error: 'Failed to parse Gemini roadmap output' });
+        }
+
+        // Optionally, override icon with your own mapping if you want
+        if (!roadmapObj.icon) {
+            roadmapObj.icon = getVectorIconForTitle(title);
+        }
+
+        // Save roadmap with login_id if provided
+        const roadmapDoc = new Roadmap({
+            profileId,
+            login_id,
+            title,
+            careerInterest,
+            goals: {
+                primary: primaryGoal,
+                secondary: secondaryGoal || ''
+            },
+            duration,
+            generatedContent: {},
+            milestones: [], // or roadmapObj.initialMilestones if you want to store them
+            progress: {
+                completedMilestones: 0,
+                totalMilestones: 0,
+                percentageComplete: 0
+            }
+        });
+        await roadmapDoc.save();
+
+        // Respond in the required format
+        res.status(201).json({
+            name: roadmapObj.name,
+            icon: roadmapObj.icon,
+            initialMilestones: roadmapObj.initialMilestones
+        });
     } catch (error) {
-        console.error("Gemini Error:", error.message);
         res.status(500).json({ error: error.message });
     }
 };
@@ -93,6 +188,19 @@ const getRoadmapsByProfileId = async (req, res) => {
         if (!profileId) return res.status(400).json({ message: 'Profile ID is required' });
         
         const roadmaps = await Roadmap.find({ profileId }).sort({ createdAt: -1 });
+        res.json(roadmaps);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Get roadmaps by login_id
+const getRoadmapsByLoginId = async (req, res) => {
+    try {
+        const { login_id } = req.params;
+        if (!login_id) return res.status(400).json({ message: 'login_id is required' });
+
+        const roadmaps = await Roadmap.find({ login_id }).sort({ createdAt: -1 });
         res.json(roadmaps);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -174,6 +282,7 @@ module.exports = {
     createRoadmap,
     getAllRoadmaps,
     getRoadmapsByProfileId,
+    getRoadmapsByLoginId, // <-- export new controller
     getRoadmapById,
     updateRoadmap,
     deleteRoadmap,

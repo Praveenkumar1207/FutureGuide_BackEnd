@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const roadmapController = require('../controllers/roadmapController');
 
-// Create new roadmap
+// Create new roadmap (now matches frontend form)
 router.post('/generate', roadmapController.createRoadmap);
 
 // Get all roadmaps (admin route)
@@ -16,5 +16,6 @@ router.delete('/profile/:profileId/all', roadmapController.deleteAllProfileRoadm
 router.get('/get/:id', roadmapController.getRoadmapById);
 router.put('update/:id', roadmapController.updateRoadmap);
 router.delete('/:id', roadmapController.deleteRoadmap);
+
 
 module.exports = router;
