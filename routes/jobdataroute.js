@@ -1,11 +1,12 @@
 const express = require('express');
-const router =  express.Router();
+const router = express.Router();
 const jobdataController = require('../controllers/jobDataController');
  
-router.post('/addjobData', jobdataController.addjobData );
-router.put('/updatejobData/:id', jobdataController.updatejobData );
-router.delete('/deletejobData/:id', jobdataController.deletejobData );
-router.get('/getjobData', jobdataController.getjobData );
-router.get('/getjobData/:id', jobdataController.getjobDataById );
+// Job data routes
+router.post('/', jobdataController.addjobData);
+router.get('/', jobdataController.getjobData);
+router.get('/:id', jobdataController.getjobDataById);
+router.put('/:id', jobdataController.updatejobData);
+router.delete('/:id', jobdataController.deletejobData);
 
 module.exports = router;

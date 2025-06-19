@@ -1,16 +1,22 @@
 const express = require('express');
 const router = express.Router();
-const chatController = require('../controllers/chatController'); // FIX: Correct path to controller
+const chatController = require('../controllers/chatController');
 
-// Existing routes
-router.post('/createChat', chatController.createSmartChat);        // Gemini chatName + 1st answer
-router.post('/sendMessageToChat', chatController.sendMessageToChat)  // Add question + answer
-router.get('/getChatByProfile/:profileId', chatController.getchatByProfileId); // Get chat by name
-router.get('/getAllChats', chatController.getAllChats)                 // All chats
-router.get('/getChatById/:chatId', chatController.getChatById)        // One chat
-router.put('/updateChatName/:chatId', chatController.updateChatName)    // Manual rename
-router.delete('/deleteChat/:chatId', chatController.deleteChat)      // Delete one
-router.delete('/deleteAllChats', chatController.deleteAllChats)         // Delete all
-router.get('/getChatStats', chatController.getChatStats)          // Stats
+// Chat routes
+router.post('/', chatController.createSmartChat);
+router.get('/', chatController.getAllChats);
+
+// Specific routes must come before generic routes with params
+router.get('/stats', chatController.getChatStats);
+router.get('/profile/:id', chatController.getchatByProfileId);
+router.post('/messages', chatController.sendMessageToChat);
+
+// DELETE all route should come before parameterized DELETE
+router.delete('/', chatController.deleteAllChats);
+
+// Generic ID routes come after more specific routes
+router.get('/:id', chatController.getChatById);
+router.put('/:id', chatController.updateChatName);
+router.delete('/:id', chatController.deleteChat);
 
 module.exports = router;

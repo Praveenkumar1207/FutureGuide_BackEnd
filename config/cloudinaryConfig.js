@@ -2,6 +2,12 @@ const cloudinary = require("cloudinary").v2;
 const multer = require("multer");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 
+// Verify that all required environment variables are present
+if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+    console.error("ERROR: Cloudinary credentials missing in environment variables!");
+    // Don't throw error here to allow app to start, but the upload functionality will fail
+}
+
 // Step 1: Configure Cloudinary with your credentials
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,

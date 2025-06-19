@@ -61,7 +61,7 @@ const createProfile = async (req, res) => {
         if (profileData.login_id) {
             const existingLoginId = await UserProfile.findOne({ login_id: profileData.login_id });
             if (existingLoginId) {
-                return res.status(400).json({ error: 'Profile with this login_id already exists' });
+                return res.status(400).json({ error: 'Profile with this login_id already existssss' });
             }
         }
 

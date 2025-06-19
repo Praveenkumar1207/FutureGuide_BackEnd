@@ -1,28 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const { upload } = require('../config/cloudinaryConfig'); // Fixed: Changed 'cloudinary' to 'cloudinaryConfig'
-const {
-    uploadJDAndCheckProfile,
-    uploadProfileDocuments,
-    scoreanalysis,
-    getScoreHistory,
-    getProfileDocumentStatus,
-    isworking
-} = require('../controllers/scoreAnalysisController');
+const { scoreanalysis, uploadPDFs, getAnalysisByProfileId,
+    getAnalysisById } = require('../controllers/scoreAnalysisController');
 
-// Step 1: Upload JD and check user profile status
-router.post('/upload-jd', upload.single('jobDescription'), uploadJDAndCheckProfile);
-router.get('/isworking', isworking); // CHANGED: from /testing to /isworking
-// Step 2: Upload Resume/LinkedIn documents (optional based on profile status)
-router.post('/upload-document', upload.single('document'), uploadProfileDocuments);
+// Analysis routes
+router.post('/', uploadPDFs, scoreanalysis);
 
-// Step 3: Perform score analysis
-router.post('/analyze', scoreanalysis);
+// Profile-specific route must come before the generic ID route
+router.get('/profile/:id', getAnalysisByProfileId);
 
-// Get user's score analysis history
-router.get('/history/:profileId', getScoreHistory);
-
-// Get user's profile document status
-router.get('/profile-status/:profileId', getProfileDocumentStatus);
+// Generic ID route comes after more specific routes
+router.get('/:id', getAnalysisById);
 
 module.exports = router;
