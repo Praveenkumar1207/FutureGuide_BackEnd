@@ -4,6 +4,6 @@ const appliedJob = require('../controllers/appliedJobsController');
 
 // Applied jobs routes
 router.post('/', appliedJob.addappliedJob);
-router.get('/profile/:id', appliedJob.getAllAppliedJobs);
+router.get('/profile/:profileId', appliedJob.getAllAppliedJobs);
 
 module.exports = router;
