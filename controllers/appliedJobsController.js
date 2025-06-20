@@ -68,6 +68,7 @@ const getAllAppliedJobs = async (req, res) => {
         // Format the response
         
         const formattedJobs = appliedJobsList.map(job => ({
+            jobId: job.jobId._id,
             jobTitle: job.jobId.jobTitle,
             companyName: job.jobId.companyName,
             applicationDate: job.applicationDate
