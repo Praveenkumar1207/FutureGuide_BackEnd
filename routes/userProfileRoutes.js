@@ -18,13 +18,13 @@ router.post("/", fileUploadConfig, userProfileController.createProfile);
 router.get('/', userProfileController.getAllProfiles);
 
 // Get a profile by login_id
-router.get('/:id', userProfileController.getProfileByLoginId);
+router.get('/:login_id', userProfileController.getProfileByLoginId);
 
 // Update a profile by login_id
-router.put('/:id', fileUploadConfig, userProfileController.updateProfile);
+router.put('/:login_id', fileUploadConfig, userProfileController.updateProfile);
 
 // Delete a profile by login_id
-router.delete('/:id', userProfileController.deleteProfile);
+router.delete('/:login_id', userProfileController.deleteProfile);
 
 module.exports = router;
 
