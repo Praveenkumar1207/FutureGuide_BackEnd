@@ -12,14 +12,15 @@ function createJDPrompt(jdText) {
 
 ${jdText}
 
-Return in this format:
-ROLE: [job title and level]
-REQUIRED_SKILLS: [list required technical skills]
-EXPERIENCE: [years of experience needed]
-EDUCATION: [education requirements]
-RESPONSIBILITIES: [main job duties]`;
+Return in this exact JSON format only:
+{
+  "ROLE": "[job title and level]",
+  "REQUIRED_SKILLS": ["list", "of", "required", "technical", "skills"],
+  "EXPERIENCE": "[years of experience needed]",
+  "EDUCATION": ["education", "requirements"],
+  "RESPONSIBILITIES": ["main", "job", "duties"]
+}`;
 }
-
 function createProfilePrompt(resumeText, linkedinText) {
     const combinedText = `RESUME:\n${resumeText}\n\nLINKEDIN:\n${linkedinText}`;
     
@@ -27,121 +28,84 @@ function createProfilePrompt(resumeText, linkedinText) {
 
 ${combinedText}
 
-Return in this format:
-SKILLS: [list of technical skills]
-EXPERIENCE: [years of experience and key roles]
-EDUCATION: [education background]
-ACHIEVEMENTS: [notable accomplishments]
-EXPERTISE: [domain knowledge]`;
+Return in this exact JSON format only:
+{
+  "SKILLS": ["list", "of", "technical", "skills"],
+  "EXPERIENCE": "[years of experience and key roles]",
+  "EDUCATION": ["education", "background"],
+  "ACHIEVEMENTS": ["notable", "accomplishments"],
+  "EXPERTISE": ["domain", "knowledge"]
+}`;
 }
-
 function createScoringPrompt(jdAnalysis, profileAnalysis) {
   return `You are an expert hiring analyst. Score the candidate based on how well their profile matches the job description.
 
 🔹 JOB DESCRIPTION:
-${jdAnalysis}
+${JSON.stringify(jdAnalysis)}
 
 🔹 CANDIDATE PROFILE (Combined Resume + LinkedIn Summary):
-${profileAnalysis}
+${JSON.stringify(profileAnalysis)}
 
 🎯 ANALYSIS & SCORING INSTRUCTIONS:
-- Score strictly from 0 to 100 based on how closely the candidate meets the job requirements.
-- Evaluate across the following categories:
-  1. Technical Skills (30%)
-  2. Relevant Work Experience (25%)
-  3. Educational Background (15%)
-  4. Domain or Industry Fit (15%)
-  5. Soft Skills (Communication, Teamwork, etc.) (10%)
-  6. Growth Potential (Career progression, certifications, attitude to learning) (5%)
-
-🔍 GAP DETECTION:
-- Clearly list any significant mismatches or missing elements between the candidate’s profile and the job description.
-- Focus on skills, qualifications, tools, domain expertise, or certifications the candidate lacks.
-
-💡 IMPROVEMENT SUGGESTIONS:
-- Provide **detailed, personalized, and actionable suggestions**.
-- Each suggestion should clearly explain **what** to improve, **why** it matters for the role, and **how** the candidate can bridge the gap.
-- Suggestions should help increase the candidate's alignment score in a real-world job application.
+1. Score from 0-100 based on job requirements match
+2. Scoring weights:
+   - Technical Skills: 30%
+   - Relevant Work Experience: 25%
+   - Educational Background: 15%
+   - Domain/Industry Fit: 15%
+   - Soft Skills: 10%
+   - Growth Potential: 5%
 
 ⚠️ YOU MUST RESPOND WITH VALID JSON ONLY. NO EXPLANATION TEXT. NO MARKDOWN.
 ⚠️ YOUR ENTIRE RESPONSE MUST BE PARSEABLE AS JSON.
 
 {
-  "score": <integer between 0 and 100>,
+  "score": <integer 0-100>,
   "breakdown": {
-    "technical_skills": <integer>,
-    "experience": <integer>,
-    "education": <integer>,
-    "domain_fit": <integer>,
-    "soft_skills": <integer>,
-    "growth_potential": <integer>
+    "technical_skills": <integer 0-30>,
+    "experience": <integer 0-25>,
+    "education": <integer 0-15>,
+    "domain_fit": <integer 0-15>,
+    "soft_skills": <integer 0-10>,
+    "growth_potential": <integer 0-5>
   },
   "gaps": [
-    "<short sentence describing each critical mismatch or missing requirement>"
+    "<short gap description>"
   ],
   "suggestions": [
-    "<detailed and helpful improvement suggestion 1>",
-    "<detailed and helpful improvement suggestion 2>",
-    "<detailed and helpful improvement suggestion 3>",
-    "<detailed and helpful improvement suggestion 4>",
-    "<detailed and helpful improvement suggestion 5>"
+    "<detailed suggestion>"
   ]
-}
-
-`;
+}`;
 }
 
 
 // Simple JSON parser with proper fallback
 function parseJSON(response) {
     try {
-        // Clean the response
-        let cleanResponse = response.trim();
+        // Remove markdown code blocks
+        let cleanResponse = response.trim()
+            .replace(/^```json\s*/i, '')
+            .replace(/\s*```$/i, '')
+            .trim();
+
+        // Find JSON boundaries
+        const startIdx = cleanResponse.indexOf('{');
+        const endIdx = cleanResponse.lastIndexOf('}');
         
-        console.log("ATTEMPTING TO PARSE:", cleanResponse.substring(0, 200) + "...");
-        
-        // Remove markdown code blocks if present
-        if (cleanResponse.startsWith('```json')) {
-            cleanResponse = cleanResponse.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-        } else if (cleanResponse.includes('```json')) {
-            // Handle case where there might be text before the code block
-            const jsonStart = cleanResponse.indexOf('```json') + 7;
-            const jsonEnd = cleanResponse.indexOf('```', jsonStart);
-            if (jsonEnd > jsonStart) {
-                cleanResponse = cleanResponse.substring(jsonStart, jsonEnd).trim();
-            }
+        if (startIdx === -1 || endIdx === -1) {
+            throw new Error('No JSON object found');
         }
-        
-        // Find JSON object even if there's text before/after
-        const startIndex = cleanResponse.indexOf('{');
-        const endIndex = cleanResponse.lastIndexOf('}') + 1;
-        
-        if (startIndex !== -1 && endIndex > startIndex) {
-            const jsonStr = cleanResponse.substring(startIndex, endIndex);
-            return JSON.parse(jsonStr);
-        }
-        
-        throw new Error('No valid JSON found');
+
+        const jsonStr = cleanResponse.substring(startIdx, endIdx + 1);
+        return JSON.parse(jsonStr);
     } catch (error) {
-        console.error('JSON parsing failed:', error.message);
+        console.error('JSON parsing error:', error.message);
+        console.error('Original response:', response);
         
-        // Return a safe fallback
-        return {
-            score: 50,
-            breakdown: {
-                technical_skills: 15,
-                experience: 12,
-                education: 8,
-                domain_fit: 8,
-                soft_skills: 5,
-                growth_potential: 2
-            },
-            gaps: ["PDF extraction failed", "Unable to analyze content"],
-            suggestions: ["Please upload readable PDF files", "Ensure PDFs contain text content"]
-        };
+        // Return null to trigger retry
+        return null;
     }
 }
-
 // Simple text cleaning
 function cleanText(text) {
     if (!text) return "";
@@ -253,10 +217,11 @@ const scoreanalysis = async (req, res) => {
             });
         }
         
-        // Initialize Gemini model
+        // Initialize Gemini model with JSON mode
         const model = genAI.getGenerativeModel({ 
-            model: 'gemini-2.5-flash-preview-05-20',
+            model: 'gemini-1.5-flash-latest',
             generationConfig: {
+                responseMimeType: 'application/json',
                 maxOutputTokens: 2000,
                 temperature: 0.3,
             }
@@ -264,36 +229,88 @@ const scoreanalysis = async (req, res) => {
         
         console.log("🤖 Analyzing with Gemini...");
         
-        // Step 1: Analyze Job Description
-        const jdPrompt = createJDPrompt(jdText);
+        // Step 1: Analyze Job Description with JSON enforcement
+        const jdPrompt = `Extract key requirements from this job description:\n\n${jdText}\n\nReturn in this exact JSON format:\n{\n  "ROLE": "[job title]",\n  "REQUIRED_SKILLS": ["skill1", "skill2"],\n  "EXPERIENCE": "[years]",\n  "EDUCATION": ["degree"],\n  "RESPONSIBILITIES": ["duty1", "duty2"]\n}`;
+        
         const jdResponse = await model.generateContent(jdPrompt);
-        const jdAnalysis = jdResponse.response.text();
+        const jdAnalysis = parseJSON(jdResponse.response.text());
         
-        // Step 2: Analyze Candidate Profile
-        const profilePrompt = createProfilePrompt(resumeText, linkedinText);
-        // console.log("Profile prompt:", profilePrompt);
+        if (!jdAnalysis) {
+            console.error("Failed to parse JD analysis. Raw response:", jdResponse.response.text());
+            return res.status(500).json({ 
+                message: "Failed to analyze Job Description" 
+            });
+        }
 
+        // Step 2: Analyze Candidate Profile with JSON enforcement
+        const profilePrompt = `Analyze this candidate profile:\n\nRESUME:\n${resumeText}\n\nLINKEDIN:\n${linkedinText}\n\nReturn in this exact JSON format:\n{\n  "SKILLS": ["skill1", "skill2"],\n  "EXPERIENCE": "[years]",\n  "EDUCATION": ["degree"],\n  "ACHIEVEMENTS": ["achievement1"],\n  "EXPERTISE": ["domain"]\n}`;
+        
         const profileResponse = await model.generateContent(profilePrompt);
-        // console.log("Profile response:", profileResponse);
+        const profileAnalysis = parseJSON(profileResponse.response.text());
         
-        const profileAnalysis = profileResponse.response.text();
-        console.log("Profile analysis response:", profileResponse.response.text());
-        // Step 3: Score the match
-        console.log("length of profileAnalysis:", profileAnalysis.length);
+        if (!profileAnalysis) {
+            console.error("Failed to parse profile analysis. Raw response:", profileResponse.response.text());
+            return res.status(500).json({ 
+                message: "Failed to analyze Candidate Profile" 
+            });
+        }
+
+        // Step 3: Score the match with retries
         console.log("📊 Scoring candidate against job description...");
-        const scoringPrompt = createScoringPrompt(jdAnalysis, profileAnalysis);
-        const scoringResponse = await model.generateContent(scoringPrompt);
-        console.log("RAW SCORING RESPONSE:", scoringResponse.response.text());
-        const scoringResult = parseJSON(scoringResponse.response.text());
+        let scoringResult = null;
+        let retryCount = 0;
+        const maxRetries = 3;
         
-        // Format for database (convert to arrays of strings as expected by schema)
+        while (!scoringResult && retryCount < maxRetries) {
+            try {
+                const scoringPrompt = `You are an expert hiring analyst. Score candidate match (0-100) between:\n\nJOB DESCRIPTION:\n${JSON.stringify(jdAnalysis)}\n\nCANDIDATE PROFILE:\n${JSON.stringify(profileAnalysis)}\n\nReturn ONLY this JSON:\n{\n  "score": SCORE AFTER ANALYZING,\n  "breakdown": {\n    "technical_skills": Y,\n    "experience": C,\n    "education": Y,\n    "domain_fit": D,\n    "soft_skills": D,\n    "growth_potential": GP\n  },\n  "gaps": ["gap description"],\n  "suggestions": ["suggestion"]\n} ALL SCORTES MUST BE IN RANGE 0-100`;
+                
+                const scoringResponse = await model.generateContent(scoringPrompt);
+                scoringResult = parseJSON(scoringResponse.response.text());
+                
+                // Validate scoring result structure
+                if (!scoringResult || 
+                    typeof scoringResult.score !== 'number' ||
+                    !scoringResult.breakdown ||
+                    !Array.isArray(scoringResult.gaps) ||
+                    !Array.isArray(scoringResult.suggestions)) {
+                    throw new Error("Invalid scoring structure");
+                }
+                
+                console.log("Scoring successful on attempt", retryCount + 1);
+            } catch (error) {
+                console.error(`Scoring attempt ${retryCount + 1} failed:`, error.message);
+                scoringResult = null;
+                retryCount++;
+            }
+        }
+
+        // Fallback if scoring fails after retries
+        if (!scoringResult) {
+            console.warn("Using fallback analysis after retry failure");
+            scoringResult = {
+                score: 50,
+                breakdown: {
+                    technical_skills: 15,
+                    experience: 12,
+                    education: 8,
+                    domain_fit: 8,
+                    soft_skills: 5,
+                    growth_potential: 2
+                },
+                gaps: ["Temporary analysis error - please try again"],
+                suggestions: ["Re-upload documents and retry analysis"]
+            };
+        }
+
+        // Format for database
         const analysisArray = [
-            `Technical Skills: ${scoringResult.breakdown.technical_skills}/30`,
-            `Experience: ${scoringResult.breakdown.experience}/25`,
-            `Education: ${scoringResult.breakdown.education}/15`,
-            `Domain Fit: ${scoringResult.breakdown.domain_fit}/15`,
-            `Soft Skills: ${scoringResult.breakdown.soft_skills}/10`,
-            `Growth Potential: ${scoringResult.breakdown.growth_potential}/10`
+            `Technical Skills: ${scoringResult.breakdown.technical_skills}/100`,
+            `Experience: ${scoringResult.breakdown.experience}/100`,
+            `Education: ${scoringResult.breakdown.education}/100`,
+            `Domain Fit: ${scoringResult.breakdown.domain_fit}/100`,
+            `Soft Skills: ${scoringResult.breakdown.soft_skills}/100`,
+            `Growth Potential: ${scoringResult.breakdown.growth_potential}/100`
         ];
         
         // Create and save analysis

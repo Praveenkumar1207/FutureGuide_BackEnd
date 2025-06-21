@@ -7,7 +7,7 @@ const { scoreanalysis, uploadPDFs, getAnalysisByProfileId,
 router.post('/', uploadPDFs, scoreanalysis);
 
 // Profile-specific route must come before the generic ID route
-router.get('/profile/:id', getAnalysisByProfileId);
+router.get('/profile/:profileId', getAnalysisByProfileId);
 
 // Generic ID route comes after more specific routes
 router.get('/:id', getAnalysisById);
